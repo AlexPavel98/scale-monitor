@@ -2,41 +2,47 @@
   "name": "scale-monitor",
   "version": "0.1.0",
   "private": true,
-  "main": "electron/main.ts",
+  "main": "dist-electron/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "electron:dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron:build": "next build && electron-builder",
-    "electron:pack": "next build && electron-builder --dir"
+    "electron:compile": "tsc -p electron/tsconfig.json",
+    "electron:dev": "npm run electron:compile && concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:build": "npm run electron:compile && electron-builder --win --x64",
+    "electron:pack": "npm run electron:compile && electron-builder --win --x64 --dir"
   },
   "build": {
     "appId": "com.scale-monitor.app",
     "productName": "Scale Monitor",
     "files": [
-      "electron/**/*",
-      "out/**/*",
+      "dist-electron/**/*",
       "public/**/*"
     ],
     "directories": {
-      "output": "dist-electron"
-    },
-    "mac": {
-      "target": "dmg",
-      "category": "public.app-category.utilities"
+      "output": "release"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "public/icon.ico"
     },
-    "linux": {
-      "target": "AppImage"
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico"
     },
     "extraResources": [
       {
         "from": "node_modules/serialport",
-        "to": "serialport"
+        "to": "serialport",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "node_modules/@serialport",
+        "to": "@serialport",
+        "filter": ["**/*"]
       }
     ]
   },

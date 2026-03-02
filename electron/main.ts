@@ -27,7 +27,7 @@ function createWindow(): void {
     minHeight: 600,
     title: "Scale Monitor",
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.js"), // compiled from preload.ts
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -37,9 +37,7 @@ function createWindow(): void {
     mainWindow.loadURL("http://localhost:3000");
     mainWindow.webContents.openDevTools({ mode: "detach" });
   } else {
-    // In production, serve the built Next.js export from the out/ directory
-    const indexPath = path.join(__dirname, "..", "out", "index.html");
-    mainWindow.loadFile(indexPath);
+    mainWindow.loadURL("https://scale-monitor.vercel.app");
   }
 
   mainWindow.on("closed", () => {
