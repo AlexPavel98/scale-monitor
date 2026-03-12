@@ -89,6 +89,8 @@ export type TranslationKeys = {
     selectProduct: string
     manualEntry: string
     liveScale: string
+    remoteScale: string
+    scaleOffline: string
     captureWeight: string
     noConnection: string
     stable: string
@@ -290,8 +292,10 @@ const da: TranslationKeys = {
     selectCustomer: 'V\u00e6lg kunde',
     selectProduct: 'V\u00e6lg vare',
     manualEntry: 'Manuel indtastning',
-    liveScale: 'Live v\u00e6gt',
-    captureWeight: 'Fang v\u00e6gt',
+    liveScale: 'Live vægt',
+    remoteScale: 'Fjernvægt',
+    scaleOffline: 'Vægt offline',
+    captureWeight: 'Fang vægt',
     noConnection: 'Ingen forbindelse',
     stable: 'Stabil',
     unstable: 'Ustabil',
@@ -493,6 +497,8 @@ const en: TranslationKeys = {
     selectProduct: 'Select product',
     manualEntry: 'Manual entry',
     liveScale: 'Live scale',
+    remoteScale: 'Remote scale',
+    scaleOffline: 'Scale offline',
     captureWeight: 'Capture weight',
     noConnection: 'No connection',
     stable: 'Stable',
