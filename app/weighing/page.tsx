@@ -46,6 +46,7 @@ export default function WeighingPage() {
   const [carNumber, setCarNumber] = useState('')
   const [trailerNumber, setTrailerNumber] = useState('')
   const [showVehicle, setShowVehicle] = useState(false)
+  const [manualWeight, setManualWeight] = useState('')
   const [saving, setSaving] = useState(false)
   const [trafficLight, setTrafficLight] = useState<'red' | 'green'>('green')
 
@@ -164,11 +165,12 @@ export default function WeighingPage() {
     setCarNumber('')
     setTrailerNumber('')
     setShowVehicle(false)
+    setManualWeight('')
   }
 
   // ---------- save weighing from UI (uses live weight) ----------
   async function handleWeigh(weightOverride?: number) {
-    const w = weightOverride || liveWeight
+    const w = weightOverride || (manualWeight ? Number(manualWeight) : liveWeight)
     if (w <= 0) {
       toast(lang === 'da' ? 'Ingen vaegt paa vaegte' : 'No weight on scale', 'error')
       return
@@ -203,13 +205,16 @@ export default function WeighingPage() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase insert error:', JSON.stringify(error))
+        throw new Error(error.message || 'Insert failed')
+      }
 
       toast(`#${nextNumber} ${customerName || ''} - ${formatKg(w)}`, 'success')
       resetForm()
-    } catch (err) {
-      console.error('Weighing error:', err)
-      toast(lang === 'da' ? 'Fejl ved vejning' : 'Weighing error', 'error')
+    } catch (err: any) {
+      console.error('Weighing error:', err?.message || err)
+      toast(err?.message || (lang === 'da' ? 'Fejl ved vejning' : 'Weighing error'), 'error')
     } finally {
       setSaving(false)
     }
@@ -271,42 +276,67 @@ export default function WeighingPage() {
         {/* ══════ LEFT: Weight + Form ══════ */}
         <div className="lg:col-span-2 space-y-5">
 
-          {/* Weight display */}
-          <div className="glass-card p-6">
-            <div className="flex items-center justify-between mb-3">
-              {/* Status */}
-              <div className="flex items-center gap-2">
-                <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-red-400'}`} />
-                <span className="text-xs font-medium text-content-dim">
-                  {isConnected ? (isStable ? 'Stabil' : 'Ustabil') : 'Ikke forbundet'}
+          {/* Traffic Light + Weight display */}
+          <div className="flex gap-3">
+            {/* Traffic light */}
+            <button
+              onClick={() => {
+                const next = trafficLight === 'red' ? 'green' : 'red'
+                setTrafficLight(next)
+                if (next === 'red') getTrafficLight()?.setRed()
+                else getTrafficLight()?.setGreen()
+              }}
+              className="glass-card px-4 flex flex-col items-center justify-center gap-2 shrink-0 cursor-pointer hover:border-brand-primary/30 transition-all"
+            >
+              <div className={`w-9 h-9 rounded-full transition-all duration-500 ${
+                trafficLight === 'red'
+                  ? 'bg-red-500 shadow-[0_0_18px_rgba(239,68,68,0.5)]'
+                  : 'bg-neutral-200 dark:bg-neutral-700'
+              }`} />
+              <div className={`w-9 h-9 rounded-full transition-all duration-500 ${
+                trafficLight === 'green'
+                  ? 'bg-emerald-500 shadow-[0_0_18px_rgba(16,185,129,0.5)]'
+                  : 'bg-neutral-200 dark:bg-neutral-700'
+              }`} />
+              <span className={`text-[9px] font-bold uppercase tracking-widest ${
+                trafficLight === 'red' ? 'text-red-500' : 'text-emerald-500'
+              }`}>
+                {trafficLight === 'red' ? 'STOP' : 'GO'}
+              </span>
+            </button>
+
+            {/* Weight display */}
+            <div className="glass-card p-6 flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-red-400'}`} />
+                  <span className="text-xs font-medium text-content-dim">
+                    {isConnected ? (isStable ? 'Stabil' : 'Ustabil') : 'Ikke forbundet'}
+                  </span>
+                </div>
+                <span className="text-[10px] font-medium text-content-dim uppercase tracking-widest">
+                  {manualWeight ? 'Manuel' : 'Live'}
                 </span>
               </div>
-              {/* Traffic light indicator */}
-              <button
-                onClick={() => {
-                  const next = trafficLight === 'red' ? 'green' : 'red'
-                  setTrafficLight(next)
-                  if (next === 'red') getTrafficLight()?.setRed()
-                  else getTrafficLight()?.setGreen()
-                }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                  trafficLight === 'red'
-                    ? 'bg-red-500/10 text-red-600 hover:bg-red-500/20'
-                    : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
-                }`}
-              >
-                <div className={`w-3 h-3 rounded-full ${
-                  trafficLight === 'red' ? 'bg-red-500' : 'bg-emerald-500'
-                }`} />
-                {trafficLight === 'red' ? 'STOP' : 'GO'}
-              </button>
-            </div>
-
-            <div className="text-center py-4">
-              <div className={`text-7xl font-black tabular-nums tracking-tight leading-none transition-colors ${
-                isStable && isConnected ? 'text-brand-primary' : 'text-content'
-              }`}>
-                {isConnected ? formatKg(liveWeight) : '-- kg'}
+              <div className="text-center py-3">
+                <div className={`text-6xl font-black tabular-nums tracking-tight leading-none transition-colors ${
+                  manualWeight
+                    ? 'text-content'
+                    : isStable && isConnected ? 'text-brand-primary' : 'text-content'
+                }`}>
+                  {manualWeight ? `${manualWeight} kg` : isConnected ? formatKg(liveWeight) : '-- kg'}
+                </div>
+              </div>
+              <div className="mt-2">
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={manualWeight}
+                  onChange={e => setManualWeight(e.target.value)}
+                  placeholder={lang === 'da' ? 'Manuel vaegt (kg)...' : 'Manual weight (kg)...'}
+                  className="glass-input text-center text-sm tabular-nums"
+                />
               </div>
             </div>
           </div>
@@ -330,7 +360,6 @@ export default function WeighingPage() {
                   onFocus={() => setCustomerOpen(true)}
                   placeholder={lang === 'da' ? 'Navn eller nummer...' : 'Name or number...'}
                   className="glass-input"
-                  autoFocus
                 />
                 {customerOpen && filteredCustomers.length > 0 && (
                   <div className="absolute z-20 top-full left-0 right-0 mt-1 glass rounded-xl shadow-xl max-h-52 overflow-y-auto border border-subtle">
@@ -395,12 +424,15 @@ export default function WeighingPage() {
             <button
               type="button"
               onClick={() => handleWeigh()}
-              disabled={saving || !isConnected || liveWeight <= 0}
+              disabled={saving || (!manualWeight && (!isConnected || liveWeight <= 0))}
               className="btn-primary w-full py-4 text-lg font-bold disabled:opacity-30 disabled:cursor-not-allowed"
             >
               {saving
                 ? '...'
-                : `${lang === 'da' ? 'Vej Ind' : 'Weight In'}${liveWeight > 0 ? ` - ${formatKg(liveWeight)}` : ''}`
+                : (() => {
+                    const w = manualWeight ? Number(manualWeight) : liveWeight
+                    return `${lang === 'da' ? 'Vej Ind' : 'Weight In'}${w > 0 ? ` - ${formatKg(w)}` : ''}`
+                  })()
               }
             </button>
           </div>
